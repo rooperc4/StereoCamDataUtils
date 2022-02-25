@@ -1,0 +1,61 @@
+---
+title: "Helper functions for SEBASTES data wrangling"
+author: "Chris Rooper"
+date: "`r format(Sys.time(),'%B %d, %Y')`"
+output: github_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_knit$set(root.dir = 'relative_path_to_root_from_Rmd' )
+library(devtools)
+library(ggplot2)
+library(pander)
+library(magick)
+```
+
+
+To install the package
+
+```{r install,eval=FALSE}
+
+library(devtools)
+devtools::install_github("rooperc4/StereoCamDataUtils")
+library("StereoCamDataUtils")
+
+```
+
+## Purpose
+
+The functions contained in this package are used to deal with the data from image analyses conducted using SEBASTES stereo camera software. Currently there are two functions, but more will be added in the future.
+
+
+```{r Figure 1, echo=FALSE}
+p<-image_read("Sebastes.png")
+plot(p)
+```
+
+## Existing Functions
+
+### Data replace
+
+This function replaces the *.db data files with new versions by matching the deployment ID's and replacing the appropriate data files
+
+```{r data_replace, eval=FALSE}
+
+SEB_data_replace("C:/Pathname.../new data","C:/Pathname.../Deployment directories")
+
+
+```
+
+### Data replace
+
+This function concatenates the *.db data files from multiple deployments into a single frame table (which includes accessory data) and a target table. 
+
+```{r data_concatenate, eval=FALSE}
+
+SEB_data_concatenate("C:/Pathname.../Deployment directories")
+
+
+```

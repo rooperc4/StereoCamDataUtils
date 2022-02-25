@@ -1,0 +1,15 @@
+Package: StereoCamDataUtils
+Title: Data Manipulation For SEBASTES Image Processing Output Files
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Chris",
+           family = "Rooper",
+           role = c("aut","cre"),,
+           email = "chris.rooper@dfo-mpo.gc.ca",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: This package contains functions that can be used to manipulate the databases that are output from SEBASTES image processing software. Allows you to concatenate multiple deployments, replace existing data with updated data, attach sensor and gps data to the frame data.
+License: `use_mit_license()`
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
