@@ -13,6 +13,7 @@ library(devtools)
 library(ggplot2)
 library(pander)
 library(magick)
+library(StereoCamDataUtils)
 ```
 
 
