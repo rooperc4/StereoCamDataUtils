@@ -1,7 +1,7 @@
 Helper functions for SEBASTES data wrangling
 ================
 Chris Rooper
-March 08, 2022
+September 29, 2022
 
 To install the package
 
@@ -52,10 +52,10 @@ There are typically two types of GPS data to merge with the image
 analysis data. The first are point data, where each camera deployment is
 at a single position (e.g. TrigCam deployments). In this case a simple
 function to merge the position data with the deployment data is used;
-SEB\_GPS\_point. It inputs the frame data outpub from the data
-concatenate function and a table of GPS points identified by a
-Deployment\_ID column. Accessory data, such as depth or temperature can
-also be added in. The code below outlines an example.
+SEB_GPS_point. It inputs the frame data outpub from the data concatenate
+function and a table of GPS points identified by a Deployment_ID column.
+Accessory data, such as depth or temperature can also be added in. The
+code below outlines an example.
 
 ``` r
 all_frame_data<-rbind(SEB_data_concatenate("D:/Longline Survey Gear Comparisons/TrigCamData/Raja")$frame.data,SEB_data_concatenate("D:/Longline Survey Gear Comparisons/TrigCamData/Clupea")$frame.data,SEB_data_concatenate("D:/Longline Survey Gear Comparisons/TrigCamData/Gadus")$frame.data)
@@ -78,34 +78,37 @@ data can also be added here as well. The below code outlines an example.
 SEB_GPS_transect()
 ```
 
+Often we have deployed a Seabird CTD on the drop camera systems. The
+following function will match the SBE data to the frame data using the
+time stamp and merge the depth and temperature data to the frames. It
+can be used for multiple files or a single file of SBE data and works
+with concatenated frame data. It is important that the time zone be
+consistent between the two data sources, but the function allows the
+user to input an offset (such as -7 hours from GMT to PST). The below
+code outlines an example.
+
+``` r
+frame_data<-SEB_data_concatenate("D:/Longline Survey Gear Comparisons/TrigCamData/Raja")
+files<-list.files("D:/Longline Survey Gear Comparisons/TrigCamData/Raja",pattern=".asc",full.names=TRUE)
+frame_data<-SEB_SeaBird_append(frame_data, files,offset=0)
+```
+
 ### Example output
 
 Finally, here’s an example of pulling the target data using the
-SEB\_data\_concatenate function and produce length frequency histograms
-in ggplot.
+SEB_data_concatenate function and produce length frequency histograms in
+ggplot.
 
 ``` r
 library(ggplot2)
 library(gridExtra)
 
 target_data<-rbind(SEB_data_concatenate("D:/Longline Survey Gear Comparisons/TrigCamData/Raja")$target.data,SEB_data_concatenate("D:/Longline Survey Gear Comparisons/TrigCamData/Clupea")$target.data,SEB_data_concatenate("D:/Longline Survey Gear Comparisons/TrigCamData/Gadus")$target.data)
-```
 
-    ## Loading required package: RSQLite
-
-``` r
 p1<-ggplot()+geom_histogram(data=target_data,aes(x=LENGTH,color=SPECIES_GROUP))+theme(legend.position="none")
 p1+facet_wrap(~SPECIES_GROUP)
-```
 
-    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-
-![](StereoCam_Data_Utils_files/figure-gfm/example%20targets-1.png)<!-- -->
-
-``` r
 d1<-aggregate(RANGE~DEPLOYMENT_ID+SPECIES_GROUP,data=target_data,FUN="length")
 p1<-ggplot(d1)+geom_bar(aes(x=DEPLOYMENT_ID,y=RANGE,color=SPECIES_GROUP,fill=SPECIES_GROUP),stat="identity",position="fill")
 p1
 ```
-
-![](StereoCam_Data_Utils_files/figure-gfm/example%20targets-2.png)<!-- -->

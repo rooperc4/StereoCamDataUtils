@@ -154,3 +154,36 @@ SEB_GPS_transect<-function(frame_data,Deployment_ID,Time, Longitude,Latitude,Acc
   frame_data<-merge(frame_data,import1,by="TIME_STAMP",all.x=TRUE)
   return(frame_data)}
 
+#' A function to append Seabird SBE data to SEBASTES deployment data
+#'
+#' This function merges a Seabird SBE file with time, depth and temperature to frame data from SEBASTES output. 
+#' @param frame_data a standard output from the SEB_data_concatenate function used on images
+#' analyzed using the SEBASTES software.
+#' @param SBE_file a single or multiple SBE files in their native format
+#' @param offset offset in hours for conversion between SBE timestamp and camera timestamp
+#'  
+#' @keywords stereo camera, SEBASTES, data concatenation, data wrangling, SeaBird
+#' @export
+#' @examples
+#' SEB_SeaBird_append(frame_data, SBE_file,offset=-7)
+
+SEB_SeaBird_append<-function(frame_data,SBE_file,offset=0){
+  #SBE_file<-"D:/SeamountTransectData/Cobb_23.asc"
+  #i<-1
+  SBEdata<-NULL
+  for(i in 1:length(SBE_file)){
+    
+  n1<-grep("start sample number = 1", readLines(SBE_file[i]), value = FALSE)
+
+  import1<-read.table(SBE_file[i],skip=n1,fill=TRUE,sep=",")  
+  t1<-as.POSIXct(paste(import1$V3,import1$V4),format='%d %b %Y %H:%M:%OS')
+  import1$TIME_STAMP<-t1+offset*3600
+  import1<-data.frame(Temperature=import1$V1,Depth=import1$V2,TIME_STAMP=import1$TIME_STAMP)
+  SBEdata<-rbind(SBEdata,import1)}
+  
+  
+  t2<-as.POSIXct(frame_data$FRAME_TIME,format='%Y-%m-%d %H:%M:%OS')
+  t2<-round_date(t2,unit="second")
+  frame_data$TIME_STAMP<-t2
+  frame_data<-merge(frame_data,SBEdata,by="TIME_STAMP",all.x=TRUE)
+  return(frame_data)}

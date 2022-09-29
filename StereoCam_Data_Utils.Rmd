@@ -92,11 +92,22 @@ SEB_GPS_transect()
 
 ```
 
+Often we have deployed a Seabird CTD on the drop camera systems. The following function will match the SBE data to the frame data using the time stamp and merge the depth and temperature data to the frames. It can be used for multiple files or a single file of SBE data and works with concatenated frame data. It is important that the time zone be consistent between the two data sources, but the function allows the user to input an offset (such as -7 hours from GMT to PST). The below code outlines an example. 
+
+```{r SBE_merge transect, eval=FALSE}
+
+frame_data<-SEB_data_concatenate("D:/Longline Survey Gear Comparisons/TrigCamData/Raja")
+files<-list.files("D:/Longline Survey Gear Comparisons/TrigCamData/Raja",pattern=".asc",full.names=TRUE)
+frame_data<-SEB_SeaBird_append(frame_data, files,offset=0)
+
+
+```
+
 ### Example output
 
 Finally, here's an example of pulling the target data using the SEB_data_concatenate function and produce length frequency histograms in ggplot.
 
-```{r example targets,warning=FALSE}
+```{r example targets,warning=FALSE,eval=FALSE}
 library(ggplot2)
 library(gridExtra)
 
