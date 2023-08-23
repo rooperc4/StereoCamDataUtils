@@ -14,6 +14,8 @@
 
 SEB_data_concatenate<-function(project.dir){
   require(RSQLite)
+  #project.dir<-"C:/Users/rooperc/Desktop/test"
+  `%nin%` = Negate(`%in%`)
   deployments<-list.dirs(project.dir,recursive=FALSE,full.names=TRUE)
   target.data<-NULL
   frame.data<-NULL
@@ -34,12 +36,27 @@ SEB_data_concatenate<-function(project.dir){
   acc.data<-dbReadTable(acc.datac,"sensor_data")
   dbDisconnect(acc.datac)
   
-  depth<-matrix(unlist(strsplit(acc.data$data, ",")),ncol=9,byrow=TRUE)[,2:9]
+  depth<-matrix(unlist(strsplit(acc.data$data[acc.data$sensor_id=="CTControl"], ",")),ncol=9,byrow=TRUE)[,2:9]
   depth<-apply(depth, 2, as.numeric)
-  depth<-data.frame(acc.data$number,depth)
+  depth<-data.frame(acc.data$number[acc.data$sensor_id=="CTControl"],depth)
   colnames(depth)<-c("FRAME_NUMBER","HEADING","PITCH","ROLL","TEMPERATURE","DEPTH","ACCEL_X","ACCEL_Y","ACCEL_Z")
+
+  if("GPS"%in%unique(acc.data$sensor_id)){
+  gps<-matrix(unlist(strsplit(acc.data$data[acc.data$sensor_id=="GPS"], ",")),ncol=15,byrow=TRUE)[,c(3,5)]
+  gps<-apply(gps, 2, as.numeric)
+  gps<-gps/100
+  gps<-data.frame(acc.data$number[acc.data$sensor_id=="GPS"],gps)
+  colnames(gps)<-c("FRAME_NUMBER","LATITUDE","LONGITUDE")
+  depth<-merge(depth,gps,by="FRAME_NUMBER",all.x=TRUE) 
+  }
+  
+  if("GPS"%nin%unique(acc.data$sensor_id)){
+    depth$LATITUDE<-NA
+    depth$LONGITUDE<-NA}
+  
   frame.datat<-merge(frame.datat,depth,by="FRAME_NUMBER",all=TRUE) 
-  frame.datat$DEPLOYMENT_ID[is.na(frame.datat$DEPLOYMENT_ID)]<-name1
+      
+    frame.datat$DEPLOYMENT_ID[is.na(frame.datat$DEPLOYMENT_ID)]<-name1
   
     frame.data<-rbind(frame.data,frame.datat)
     target.data<-rbind(target.data,target.datat)
