@@ -42,7 +42,8 @@ SEB_data_concatenate<-function(project.dir){
   frame.datat$DEPLOYMENT_ID[is.na(frame.datat$DEPLOYMENT_ID)]<-name1
   
     frame.data<-rbind(frame.data,frame.datat)
-    target.data<-rbind(target.data,target.datat)}
+    target.data<-rbind(target.data,target.datat)
+    print(i)}
   
   write.csv(target.data,file=paste(project.dir,"/targetout_data.csv",sep=""),row.names=FALSE)
   write.csv(frame.data,file=paste(project.dir,"/frameout_data.csv",sep=""),row.names=FALSE)
