@@ -14,7 +14,7 @@
 
 SEB_data_concatenate<-function(project.dir){
   require(RSQLite)
-  #project.dir<-"C:/Users/rooperc/Desktop/test"
+  project.dir<-"C:/Users/rooperc/Desktop/test"
   `%nin%` = Negate(`%in%`)
   deployments<-list.dirs(project.dir,recursive=FALSE,full.names=TRUE)
   target.data<-NULL
@@ -42,7 +42,7 @@ SEB_data_concatenate<-function(project.dir){
   colnames(depth)<-c("FRAME_NUMBER","HEADING","PITCH","ROLL","TEMPERATURE","DEPTH","ACCEL_X","ACCEL_Y","ACCEL_Z")
 
   if("GPS"%in%unique(acc.data$sensor_id)){
-  gps<-matrix(unlist(strsplit(acc.data$data[acc.data$sensor_id=="GPS"], ",")),ncol=15,byrow=TRUE)[,c(3,5)]
+  gps<-matrix(unlist(sapply(strsplit(acc.data$data[acc.data$sensor_id=="GPS"], ","),'[',c(3,5))),ncol=2,byrow=TRUE)
   gps<-apply(gps, 2, as.numeric)
   gps<-gps/100
   gps<-data.frame(acc.data$number[acc.data$sensor_id=="GPS"],gps)
