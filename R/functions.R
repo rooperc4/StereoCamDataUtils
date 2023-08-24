@@ -14,7 +14,7 @@
 
 SEB_data_concatenate<-function(project.dir){
   require(RSQLite)
-  project.dir<-"C:/Users/rooperc/Desktop/test"
+ # project.dir<-"C:/Users/rooperc/Desktop/test"
   `%nin%` = Negate(`%in%`)
   deployments<-list.dirs(project.dir,recursive=FALSE,full.names=TRUE)
   target.data<-NULL
