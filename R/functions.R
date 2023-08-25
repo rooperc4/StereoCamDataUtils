@@ -280,7 +280,9 @@ SEB_GPS_transect<-function(frame_data,Deployment_ID,Time, Longitude,Latitude,Acc
 #' SEB_SeaBird_append(frame_data, SBE_file,offset=-7)
 
 SEB_SeaBird_append<-function(frame_data,SBE_file,offset=0){
-  #SBE_file<-"D:/SeamountTransectData/Cobb_23.asc"
+  SBE_file<-files
+  frame_data<-frame.data
+  offset<-0
   #i<-1
   require(lubridate)
   SBEdata<-NULL
@@ -290,6 +292,7 @@ SEB_SeaBird_append<-function(frame_data,SBE_file,offset=0){
 
   import1<-read.table(SBE_file[i],skip=n1,fill=TRUE,sep=",")  
   t1<-as.POSIXct(paste(import1$V3,import1$V4),format='%d %b %Y %H:%M:%OS')
+  t1<-round_date(t1,unit="second")
   import1$TIME_STAMP<-t1+offset*3600
   import1<-data.frame(Temperature=import1$V1,Depth=import1$V2,TIME_STAMP=import1$TIME_STAMP)
   SBEdata<-rbind(SBEdata,import1)}
