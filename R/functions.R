@@ -70,7 +70,7 @@ SEB_data_concatenate<-function(project.dir){
     depth$LONGITUDE<-NA}
   
   depth<-merge(image.data,depth,by="FRAME_NUMBER",all.x=TRUE)
-  depth$IMAGE_NUMBER<-depth$FRAME_NUMBER
+  #depth$IMAGE_NUMBER<-depth$FRAME_NUMBER
   #depth$FRAME_NUMBER<-seq(1,length(depth$FRAME_NUMBER),1)
   
   frame.datat<-merge(frame.datat,depth,by="FRAME_NUMBER",all=TRUE) 
