@@ -79,8 +79,7 @@ SEB_data_concatenate<-function(project.dir){
     colnames(frame.datat)[colnames(frame.datat)=="time"]<-"FRAME_TIME"
   
     frame.data<-rbind(frame.data,frame.datat)
-    target.data<-rbind(target.data,target.datat)
-    print(i)}
+    target.data<-rbind(target.data,target.datat)}
   
   write.csv(target.data,file=paste(project.dir,"/targetout_data.csv",sep=""),row.names=FALSE)
   write.csv(frame.data,file=paste(project.dir,"/frameout_data.csv",sep=""),row.names=FALSE)
