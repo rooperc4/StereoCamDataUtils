@@ -71,7 +71,7 @@ SEB_data_concatenate<-function(project.dir){
   
   depth<-merge(image.data,depth,by="FRAME_NUMBER",all.x=TRUE)
   depth$IMAGE_NUMBER<-depth$FRAME_NUMBER
-  depth$FRAME_NUMBER<-seq(1,length(depth$FRAME_NUMBER),1)
+  #depth$FRAME_NUMBER<-seq(1,length(depth$FRAME_NUMBER),1)
   
   frame.datat<-merge(frame.datat,depth,by="FRAME_NUMBER",all=TRUE) 
       
@@ -279,15 +279,15 @@ SEB_GPS_transect<-function(frame_data,Deployment_ID,Time, Longitude,Latitude,Acc
 #' SEB_SeaBird_append(frame_data, SBE_file,offset=-7)
 
 SEB_SeaBird_append<-function(frame_data,SBE_file,offset=0){
-<<<<<<< HEAD
+
  # SBE_file<-files
  # frame_data<-frame.data
  # offset<-0
-=======
+
   SBE_file<-files
   frame_data<-frame.data
   offset<-0
->>>>>>> a3c75e74d853b97a06c7cc90cdd3aca61e55bab3
+
   #i<-1
   require(lubridate)
   SBEdata<-NULL
