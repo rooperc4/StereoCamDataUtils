@@ -6,7 +6,6 @@
 \usage{
 SEB_GPS_transect(
   frame_data,
-  Deployment_ID,
   Time,
   Longitude,
   Latitude,
@@ -17,8 +16,6 @@ SEB_GPS_transect(
 \arguments{
 \item{frame_data}{a standard output from the SEB_data_concatenate function used on images
 analyzed using the SEBASTES software.}
-
-\item{Deployment_ID}{a column of deployment IDs corresponding to the unique IDs in the frame data}
 
 \item{Time}{a column of times in as.POSIXct format (e.g. '\%Y-\%m-\%d \%H:\%M:\%OS')}
 
