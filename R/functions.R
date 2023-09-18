@@ -240,7 +240,6 @@ SEB_GPS_point<-function(frame_data,Deployment_ID,Longitude,Latitude,Accessory_da
 #' data frame can also be appended to the output. 
 #' @param frame_data a standard output from the SEB_data_concatenate function used on images
 #' analyzed using the SEBASTES software.
-#' @param Deployment_ID a column of deployment IDs corresponding to the unique IDs in the frame data
 #' @param Time a column of times in as.POSIXct format (e.g. '%Y-%m-%d %H:%M:%OS')
 #' @param Longitude a column of longitudes for each deployment ID
 #' @param Latitude a column of latitudes for each deployment ID
@@ -252,9 +251,9 @@ SEB_GPS_point<-function(frame_data,Deployment_ID,Longitude,Latitude,Accessory_da
 #' @examples
 #' SEB_data_replace(frame_data, GPS_data$Deployment_ID, GPS_data$Time, GPS_data$Longitude, GPS_data$Latitude, GPS_data[,4:10],offset=-7)
 
-SEB_GPS_transect<-function(frame_data,Deployment_ID,Time, Longitude,Latitude,Accessory_data=NULL,offset=0){
+SEB_GPS_transect<-function(frame_data,Time, Longitude,Latitude,Accessory_data=NULL,offset=0){
   
-  import1<-data.frame(DEPLOYMENT_ID=Deployment_ID,TIME=Time,LONGITUDE=Longitude,LATITUDE=Latitude,Accessory_data)
+  import1<-data.frame(TIME=Time,LONGITUDE=Longitude,LATITUDE=Latitude,Accessory_data)
   t1<-Time
   t1<-round_date(t1,unit="second")
   import1$TIME_STAMP<-t1+offset*3600
