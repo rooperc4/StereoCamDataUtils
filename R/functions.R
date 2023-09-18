@@ -15,7 +15,7 @@
 SEB_data_concatenate<-function(project.dir){
   require(RSQLite)
   require(tidyr)
-  #project.dir<-"C:/Users/rooperc/Desktop/test"
+  #project.dir<-"C:/Users/rooperc/Desktop/SeamountSebastes"
   `%nin%` = Negate(`%in%`)
   deployments<-list.dirs(project.dir,recursive=FALSE,full.names=TRUE)
   target.data<-NULL
@@ -284,9 +284,9 @@ SEB_SeaBird_append<-function(frame_data,SBE_file,offset=0){
  # frame_data<-frame.data
  # offset<-0
 
-  SBE_file<-files
-  frame_data<-frame.data
-  offset<-0
+ # SBE_file<-files
+  #frame_data<-frame.data
+  #offset<-0
 
   #i<-1
   require(lubridate)
@@ -307,3 +307,156 @@ SEB_SeaBird_append<-function(frame_data,SBE_file,offset=0){
   frame_data$TIME_STAMP<-t2
   frame_data<-merge(frame_data,SBEdata,by="TIME_STAMP",all.x=TRUE)
   return(frame_data)}
+
+
+#########################################################################################################
+##########################################################################################################
+###########################################################################################################
+#' A function to fix bad naming in profile for Sebastes deployment (happened in 2022 GOA and Seamount surveys)
+#'
+#' This function fixes 5 digit numbering to 6 digit numbering and appendds new number to existing data
+#' @param startDir Directory with the bad deployment data.
+#' @param camera the name of one of the cameras in the stereo pari (default is DropCam1 'Blackfly BFLY-PGE-50S5C_16396245'
+
+#'  
+#' @keywords stereo camera, SEBASTES, data concatenation, data wrangling
+#' @export
+#' @examples
+#' six_digit_framename_fix("C:/Users/rooperc/Desktop/SeamountSebastes")
+
+six_digit_framename_fix<-function(startDir,camera=c('Blackfly BFLY-PGE-50S5C_16396245', 'Blackfly S BFS-PGE-50S5M_21282929')){
+require(RSQLite)
+
+#startDir <- 'C:/Users/rooperc/Desktop/SeamountSebastes'
+####################   THIS IS VALID FOR DROPCAM UNIT 1 !!!!! ###################
+#camera<-c('Blackfly BFLY-PGE-50S5C_16396245', 'Blackfly S BFS-PGE-50S5M_21282929')
+##############################################################
+
+#for dirName, subDirs, files in os.walk(startDir):
+subDirs<-list.dirs(startDir,recursive=FALSE,full.names=FALSE)
+subDirs<-subset(subDirs,substr(subDirs,0,3)=='D20')
+subDirCopy<-subDirs
+
+#  iterate through our list of dirs
+for(i in 1:length(subDirCopy)){
+  dir1<-subDirs[i]
+  #  look for targets of interest
+  if (substr(dir1,0,5) == 'D2022'){
+  
+  print(paste0('starting on ',dir1))}
+
+    # get unit
+  # open up local db file
+ # db = dbConnection.dbConnection(dirName+'/'+dir+'/data/'+dir+'.db', '', '',label='dataDB', driver="QSQLITE")
+  db<-dbConnect(RSQLite::SQLite(),dbname=paste0(startDir,'/',dir1,'/data/',dir1,'.db'))
+#db.dbOpen()
+# check to see if fix has been applied
+query1<-dbSendQuery(db,"SELECT FRAME_TIME FROM FRAMES")
+query<-dbFetch(query1)
+dbClearResult(query1)
+
+val<-query[1,1]
+if(val!=''){
+  print(paste0('already fixed ',dir1))
+  {next}}
+
+# setup image navigation structure that is the same as in sebastes
+working_cam<-ifelse(dir.exists(paste0(startDir,'/',dir1,'/images/',camera[1])),camera[1],camera[2])# this is the dropcam #2 scenario
+
+imageFiles<-NULL
+imageFiles<-list.files(paste0(startDir,'/',dir1,'/images/',working_cam),pattern=".jpg",recursive=TRUE,full.names=FALSE)
+
+  #imageFiles.append(file.split('\\')[-1])
+
+
+
+#  process the filenames in the directory extracting frame number and time
+imageFrames<-NULL
+imageFramesOld<-NULL
+timestamps<-NULL
+pydateformat='D%Y%m%d-T%H%M%OS'
+totalFrames<-length(imageFiles)
+for(j in 1:totalFrames){
+  x<-imageFiles[j]
+imageFrames<-c(imageFrames,as.numeric(substr(x,0,6)))
+imageFramesOld<-c(imageFramesOld,as.numeric(substr(x,0,5)))
+tx<-format(as.POSIXlt(substr(x,8,28),tz="UTC",format=pydateformat),"%Y-%m-%d %H:%M:%OS3")
+timestamps<-c(timestamps,tx)}
+
+
+
+query1<-dbSendQuery(db,"SELECT FRAME_NUMBER FROM FRAMES")
+query<-dbFetch(query1)
+dbClearResult(query1)
+
+dbExecute(db,"ALTER TABLE frames ADD frame_number2 int(255)")
+dbExecute(db,"ALTER TABLE frame_metadata ADD frame_number2 int(255)")
+dbExecute(db,"ALTER TABLE targets ADD frame_number2 int(255)")
+dbExecute(db,"ALTER TABLE bounding_boxes ADD frame_number2 int(255)")
+
+#indbframes<-NULL
+for(k in 1:length(query$FRAME_NUMBER)){
+
+ oldFrameNum<-query$FRAME_NUMBER[k]
+ indexframes<-which(imageFramesOld==oldFrameNum)[1]
+ 
+ # this is the image loop
+#  indbframes.append(int(oldFrameNum))
+#for oldFrameNum in indbframes:
+  #index=imageFramesOld.index(int(oldFrameNum))
+newFrameNum<-imageFrames[indexframes]
+timestamp=timestamps[indexframes]
+dbExecute(db,paste0("UPDATE frames SET frame_number2=",newFrameNum,", frame_time='",timestamp,"' where frame_number=",oldFrameNum))
+dbExecute(db,paste0("UPDATE frame_metadata SET frame_number2=",newFrameNum," where frame_number=",oldFrameNum))
+dbExecute(db,paste0("UPDATE targets SET frame_number2=",newFrameNum," where frame_number=",oldFrameNum))
+dbExecute(db,paste0("UPDATE bounding_boxes SET frame_number2=",newFrameNum," where frame_number=",oldFrameNum))
+}
+
+dbExecute(db,"UPDATE frames SET frame_number = frame_number*1000000")
+dbExecute(db,"UPDATE frames SET frame_number = frame_number2")
+dbExecute(db,"ALTER TABLE frames DROP COLUMN frame_number2")
+
+dbExecute(db,"UPDATE frame_metadata SET frame_number = frame_number*1000000")
+dbExecute(db,"UPDATE frame_metadata SET frame_number = frame_number2")
+dbExecute(db,"ALTER TABLE frame_metadata DROP COLUMN frame_number2")
+
+dbExecute(db,"UPDATE targets SET frame_number = frame_number*1000000")
+dbExecute(db,"UPDATE targets SET frame_number = frame_number2")
+dbExecute(db,"ALTER TABLE targets DROP COLUMN frame_number2")
+
+dbExecute(db,"UPDATE bounding_boxes SET frame_number = frame_number*1000000")
+dbExecute(db,"UPDATE bounding_boxes SET frame_number = frame_number2")
+dbExecute(db,"ALTER TABLE bounding_boxes DROP COLUMN frame_number2")
+
+
+
+# write out files
+db_df<-dbReadTable(db,"FRAMES")
+write.csv(db_df,paste0(startDir,'/',dir1,'/data/',dir1,'_frames.csv'),row.names=FALSE)
+
+db_df<-dbReadTable(db,"FRAME_METADATA")
+write.csv(db_df,paste0(startDir,'/',dir1,'/data/',dir1,'_frame_metadata.csv'),row.names=FALSE)
+
+db_df<-dbReadTable(db,"TARGETS")
+write.csv(db_df,paste0(startDir,'/',dir1,'/data/',dir1,'_targets.csv'),row.names=FALSE)
+
+db_df<-dbReadTable(db,"BOUNDING_BOXES")
+write.csv(db_df,paste0(startDir,'/',dir1,'/data/',dir1,'_bounding_boxes.csv'),row.names=FALSE)
+
+dbDisconnect(db)
+
+print(paste0('ending ',paste0(startDir,'/',dir1)))
+}
+
+print('done!!')}
+
+
+
+
+
+
+
+
+
+
+
