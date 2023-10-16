@@ -15,7 +15,7 @@
 SEB_data_concatenate<-function(project.dir){
   require(RSQLite)
   require(tidyr)
-  #project.dir<-"C:/Users/rooperc/Desktop/SeamountSebastes"
+  #project.dir<-"D:/SeamountTransectData"
   `%nin%` = Negate(`%in%`)
   deployments<-list.dirs(project.dir,recursive=FALSE,full.names=TRUE)
   target.data<-NULL
@@ -49,7 +49,10 @@ SEB_data_concatenate<-function(project.dir){
   image.data<-dbReadTable(acc.datac,"images")
   dbDisconnect(acc.datac)
   
-  depth<-matrix(unlist(strsplit(acc.data$data[acc.data$sensor_id=="CTControl"], ",")),ncol=9,byrow=TRUE)[,2:9]
+  depth<-acc.data$data[acc.data$sensor_id=="CTControl"]
+  depth<-gsub("\\$OHPR,","",depth)
+  
+  depth<-matrix(unlist(strsplit(depth, ",")),ncol=8,byrow=TRUE)[,1:8]
   depth<-apply(depth, 2, as.numeric)
   depth<-data.frame(acc.data$number[acc.data$sensor_id=="CTControl"],depth)
   colnames(depth)<-c("FRAME_NUMBER","HEADING","PITCH","ROLL","TEMPERATURE","DEPTH","ACCEL_X","ACCEL_Y","ACCEL_Z")
@@ -323,7 +326,7 @@ SEB_SeaBird_append<-function(frame_data,SBE_file,offset=0){
 #' @examples
 #' six_digit_framename_fix("C:/Users/rooperc/Desktop/SeamountSebastes")
 
-six_digit_framename_fix<-function(startDir,camera=c('Blackfly BFLY-PGE-50S5C_16396245', 'Blackfly S BFS-PGE-50S5M_21282929')){
+six_digit_framename_fix<-function(startDir,camera=c('Blackfly BFLY-PGE-50S5C_16396245', 'Blackfly BFLY-PGE-50S5C_16304398')){
 require(RSQLite)
 
 #startDir <- 'C:/Users/rooperc/Desktop/SeamountSebastes'
