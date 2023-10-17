@@ -14,6 +14,7 @@
 
 SEB_data_concatenate<-function(project.dir){
   require(RSQLite)
+  require(lubridate)
   require(tidyr)
   #project.dir<-"D:/SeamountTransectData"
   `%nin%` = Negate(`%in%`)
@@ -49,6 +50,10 @@ SEB_data_concatenate<-function(project.dir){
   image.data<-dbReadTable(acc.datac,"images")
   dbDisconnect(acc.datac)
   
+  acc.datad<-dbConnect(RSQLite::SQLite(),dbname=acc_files)
+  acc.dataad<-dbReadTable(acc.datad,"async_data")
+  dbDisconnect(acc.datad)
+  
   depth<-acc.data$data[acc.data$sensor_id=="CTControl"]
   depth<-gsub("\\$OHPR,","",depth)
   
@@ -68,7 +73,24 @@ SEB_data_concatenate<-function(project.dir){
   depth<-merge(depth,gps,by="FRAME_NUMBER",all.x=TRUE) 
   }
   
-  if("GPS"%nin%unique(acc.data$sensor_id)){
+  
+  
+  if("GPS"%nin%unique(acc.data$sensor_id)&"GPS"%in%unique(acc.dataad$sensor_id)){
+  datetime1<-data.frame(FRAME_TIME=as.POSIXct(acc.data$time),FRAME_NUMBER=acc.data$number)
+  datetime1$FRAME_TIME<-round_date(datetime1$FRAME_TIME,unit="second")
+  gps<-matrix(unlist(sapply(strsplit(acc.dataad$data[acc.dataad$sensor_id=="GPS"], ","),'[',c(3,5))),ncol=2,byrow=TRUE)
+  gps<-apply(gps, 2, as.numeric)
+  gps<-gps/100
+  gps<-data.frame(acc.dataad$time[acc.dataad$sensor_id=="GPS"],gps)
+  colnames(gps)<-c("FRAME_TIME","LATITUDE","LONGITUDE")
+  gps$FRAME_TIME<-round_date(as.POSIXct(gps$FRAME_TIME),unit="second")
+  gps<-merge(gps,datetime1,by="FRAME_TIME")
+  gps<-gps[!duplicated(gps$FRAME_TIME),]
+  gps<-gps[,-1]
+  depth<-merge(depth,gps,by="FRAME_NUMBER",all.x=TRUE) 
+  }
+  
+  if("GPS"%nin%unique(acc.data$sensor_id)&"GPS"%nin%unique(acc.dataad$sensor_id)){
     depth$LATITUDE<-NA
     depth$LONGITUDE<-NA}
   
@@ -128,7 +150,7 @@ SEB_data_concatenate_sql3<-function(project.dir){
     acc.datac<-dbConnect(RSQLite::SQLite(),dbname=acc_files)
     acc.data<-dbReadTable(acc.datac,"sensor_data")
     dbDisconnect(acc.datac)
-    
+
     depth<-matrix(unlist(strsplit(acc.data$data[acc.data$sensor_id=="CTControl"], ",")),ncol=9,byrow=TRUE)[,2:9]
     depth<-apply(depth, 2, as.numeric)
     depth<-data.frame(acc.data$number[acc.data$sensor_id=="CTControl"],depth)
@@ -252,7 +274,7 @@ SEB_GPS_point<-function(frame_data,Deployment_ID,Longitude,Latitude,Accessory_da
 #' @keywords stereo camera, SEBASTES, data concatenation, data wrangling
 #' @export
 #' @examples
-#' SEB_data_replace(frame_data, GPS_data$Deployment_ID, GPS_data$Time, GPS_data$Longitude, GPS_data$Latitude, GPS_data[,4:10],offset=-7)
+#' SEB_GPS_transect(frame_data, GPS_data$Time, GPS_data$Longitude, GPS_data$Latitude, GPS_data[,4:10],offset=-7)
 
 SEB_GPS_transect<-function(frame_data,Time, Longitude,Latitude,Accessory_data=NULL,offset=0){
   
