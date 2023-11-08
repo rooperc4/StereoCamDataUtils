@@ -34,7 +34,7 @@ camera deployments). A third column identifies the Deployment_ID. Accessory data
 data frame can also be appended to the output.
 }
 \examples{
-SEB_data_replace(frame_data, GPS_data$Deployment_ID, GPS_data$Time, GPS_data$Longitude, GPS_data$Latitude, GPS_data[,4:10],offset=-7)
+SEB_GPS_transect(frame_data, GPS_data$Time, GPS_data$Longitude, GPS_data$Latitude, GPS_data[,4:10],offset=-7)
 }
 \keyword{SEBASTES,}
 \keyword{camera,}

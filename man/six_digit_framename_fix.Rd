@@ -6,7 +6,7 @@
 \usage{
 six_digit_framename_fix(
   startDir,
-  camera = c("Blackfly BFLY-PGE-50S5C_16396245", "Blackfly S BFS-PGE-50S5M_21282929")
+  camera = c("Blackfly BFLY-PGE-50S5C_16396245", "Blackfly BFLY-PGE-50S5C_16304398")
 )
 }
 \arguments{
