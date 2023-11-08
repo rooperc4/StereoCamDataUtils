@@ -277,6 +277,10 @@ SEB_GPS_point<-function(frame_data,Deployment_ID,Longitude,Latitude,Accessory_da
 #' SEB_GPS_transect(frame_data, GPS_data$Time, GPS_data$Longitude, GPS_data$Latitude, GPS_data[,4:10],offset=-7)
 
 SEB_GPS_transect<-function(frame_data,Time, Longitude,Latitude,Accessory_data=NULL,offset=0){
+  # Time<-EK80data$DateTime
+  # Longitude<-EK80data$EK80_Longitude
+  # Latitude<-EK80data$EK80_Latitude
+  # Accessory_data<-EK80data$EK80_Depth
   
   import1<-data.frame(TIME=Time,LONGITUDE=Longitude,LATITUDE=Latitude,Accessory_data)
   t1<-Time
