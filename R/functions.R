@@ -516,7 +516,6 @@ SEB_Swath_Width<-function(horizontal_AOV, range_distance){
 
 SEB_Viewing_Angles<-function(calibration_file, image_width,image_height,plot.it=TRUE){
   require(R.matlab)
-  require(genR)
   require(plotly)
   require(ggplot2)
   ag<-readMat(calibration_file,header=TRUE)
