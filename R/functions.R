@@ -479,12 +479,145 @@ print(paste0('ending ',paste0(startDir,'/',dir1)))
 print('done!!')}
 
 
+#' A function to calculate the swath area viewed by a stereo camera
+#'
+#' This function uses a horizonal viewing angle from SEB_Viewing_Angles to estimate the horizontal area
+#' viewed by a stareo camera at a set range. Typically this is used to compute the area swepte along a 
+#' survey transect at a median range of objects that were observed. This method is based on Rooper et al 
+#' 2016.  
+#' @param horizonal_AOV a horizontal viewing angle calculated from SEB_Viewing_Angles function or other source
+#' @param range_distance the range at which to calculate the horizontal distance viewed
+#' 
+#' @keywords stereo camera, SEBASTES, data concatenation, data wrangling area swept
+#' @export
+#' @examples
+#' swath<-SEB_Swath_Width(angles$horizontal_AOV, median(target_data$range,na.rm=TRUE))
+
+SEB_Swath_Width<-function(horizontal_AOV, range_distance){
+  w1<-2*(tan((horizontal_AOV/2)*pi/180))*range_distance
+  return(w1)
+}
+
+#' A function to calculate the angle viewed by a stereo camera
+#'
+#' This function uses a stereo camera calibration *.mat file to estimate the horizontal angle of view
+#'  for a camera pair. It is a translation from Matlab to R of functions from Kresimir Williams to
+#'  calculate horizontal AOV and uses a translated function from the Bouget et al. 2008 to do the  Rodrigues 
+#'  transformation of the calibration. 
+#' @param calibration_file a calibration file for a stereo camera from matlab (*.mat)
+#' @param image_width the image width from the camera in pixels
+#' @param image_height the image height from the camera in pixels
+#' @param plot.it do you want to generate a plot of the viewing angle?
+#' 
+#' @keywords stereo camera, SEBASTES, data concatenation, data wrangling area swept
+#' @export
+#' @examples
+#' angles<-SEB_Viewing_Angles('dropcam_unit2_calibration_switched.mat', 2048,1536)
+
+SEB_Viewing_Angles<-function(calibration_file, image_width,image_height,plot.it=TRUE){
+  require(R.matlab)
+  require(plotly)
+  require(ggplot2)
+  ag<-readMat(calibration_file,header=TRUE)
+
+  Cal.T=T
+  Cal.om=ag$om
+  Cal.fc_right=ag$fc.right
+  Cal.cc_right=ag$cc.right
+  Cal.kc_right=ag$kc.right
+  Cal.alpha_c_right=ag$alpha.c.right
+  Cal.fc_left=ag$fc.left
+  Cal.cc_left=ag$cc.left
+  Cal.kc_left=ag$kc.left
+  Cal.alpha_c_left=ag$alpha.c.left
+  
+  
+  Cal.im_dim<-c(image_width,image_height)
+  Cal.R<-genR(Cal.om,space="SO3")
+  Cal.R=rodrigues(Cal.om)
+  # view cone
+  
+  IP_left = matrix(rbind(c(1,-Cal.alpha_c_left,0),c(0, 1, 0),c(0, 0, 1)),ncol=3)%*%
+  matrix(rbind(c(1/Cal.fc_left[1], 0, 0),c(0, 1/Cal.fc_left[2], 0),c(0, 0, 1)),ncol=3)%*%
+  matrix(rbind(c(1, 0, -Cal.cc_left[1]),c(0, 1, -Cal.cc_left[2]),c(0, 0, 1)),ncol=3)%*%
+  matrix(rbind(c(0, Cal.im_dim[1]-1, Cal.im_dim[1]-1, 0, 0),c(0, 0, Cal.im_dim[2]-1, Cal.im_dim[2]-1, 0),c(1, 1, 1, 1, 1)),ncol=5)
+  horizontal_AOV=(180/pi)*(atan(abs(IP_left[1,1]))+atan(abs(IP_left[1,2])))
+  vertical_AOV=(180/pi)*(atan(abs(IP_left[2,1]))+atan(abs(IP_left[2,2])))
+  BASE_left = 0.5 *(matrix(rbind(c(0, 1, 0, 0, 0, 0),c(0, 0, 0, 1, 0, 0),c(0, 0, 0, 0, 0, 1)),ncol=6))
+  IP_left  = matrix(rbind(IP_left,BASE_left[,1]%*%matrix(1,1,5),IP_left),nrow=3,ncol=15)
+  scene<-list(camera=list(eye=list(x=-1.5,y=-1.5,z=1.5)))
+  plot_ly(x=IP_left[1,],y=IP_left[3,],z=IP_left[2,],type="scatter3d",mode="lines")%>%
+    layout(title='view size at 1 m',scene=scene)
+  
+    return(list(horizontal_AOV=horizontal_AOV,vertical_AOV=vertical_AOV,Cal.R=Cal.R))}
+
+#' A function to do the Rodrigues transform rotation on a matlab calibration
+#' 
+#' Translated from Matlab Toolbox (Bouget et al. 2008). Requires a *.mat calibration file.
+#' 
+rodrigues<-function(om){
+
+#om<-Cal.om
+
+m<-dim(om)[1]
+n<-dim(om)[2]
+eps<-2.2204*10^-16
+bigeps = 10e+20*eps
+
+theta = norm(om,type="F")
+if(theta < eps){
+R = diag(3)
+
+dRdin = matrix(c(0,0,0,0, 0, 1,0, -1,0,0,0,-1, 0, 0, 0,1, 0, 0,0, 1, 0, -1, 0, 0,0, 0, 0),ncol=3)
+
+}
 
 
+dm3din = matrix(rbind(diag(3),Conj(t(om))/theta),ncol=3)
+
+omega = matrix(om/theta)
 
 
+dm2dm3 = matrix(rbind(cbind(diag(3)/theta, -om/theta^2), c(matrix(0,1,3),1)),ncol=4)
 
+alpha = cos(theta)
+beta = sin(theta)
+gamma = 1-cos(theta)
+omegav=matrix(c(0, -omega[3], omega[2],omega[3], 0, -omega[1],-omega[2], omega[1], 0),ncol=3,byrow=TRUE)
+        A = omega%*%Conj(t(omega))
+          
+dm1dm2 = matrix(0,21,4)
+dm1dm2[1,4] = -sin(theta)
+dm1dm2[2,4] = cos(theta)
+dm1dm2[3,4] = sin(theta)
+dm1dm2[4:12,1:3] = Conj(t(rbind(c(0, 0, 0, 0, 0, 1, 0, -1, 0),
+                              c(0, 0, -1, 0, 0, 0, 1, 0, 0),
+                              c(0, 1, 0, -1, 0, 0, 0, 0, 0))))
 
+        w1 = omega[1]
+        w2 = omega[2]
+        w3 = omega[3]
 
+        dm1dm2[13:21,1] = c(2*w1,w2,w3,w2,0,0,w3,0,0)
+        dm1dm2[13:21,2] = c(0,w1,0,w1,2*w2,w3,0,w3,0)
+        dm1dm2[13:21,3] = c(0,0,w1,0,0,w2,w1,w2,2*w3)
 
+        R = diag(3)*alpha + omegav*beta + A*gamma;
 
+        dRdm1 = matrix(0,9,21)
+
+        dRdm1[c(1, 5, 9),1] = matrix(1,3,1)
+        dRdm1[,2] = omegav
+        dRdm1[,4:12] = beta*diag(9)
+        dRdm1[,3] = A
+        dRdm1[,13:21] = gamma*diag(9)
+
+        dRdin = dRdm1%*%dm1dm2%*%dm2dm3%*%dm3din;
+
+return(R)
+}
+
+#fixed April 6th by Bouguet -- not working in all cases!
+# out = theta * (sqrt((diag(R)+1)/2).*[1;2*(R(1,2:3)>=0)'-1]);
+#theta * (sqrt((diag(R)+1)/2)*as.vector(c(1,2*Conj(t(R[1,2:3]))-1)))        
+    
