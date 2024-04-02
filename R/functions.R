@@ -518,9 +518,13 @@ SEB_Viewing_Angles<-function(calibration_file, image_width,image_height,plot.it=
   require(R.matlab)
   require(plotly)
   require(ggplot2)
+  
+#calibration_file<-"C:/Users/rooperc/Desktop/Stereo_Image_Applications/Camera Calibration Instructions and Tools/SEBASTES Calibrations and Configurations/dropcam_unit2_calibration_switched.mat"
+  
+  if(grepl("*.mat",calibration_file)==TRUE){
   ag<-readMat(calibration_file,header=TRUE)
 
-  Cal.T=T
+  Cal.T=ag$T
   Cal.om=ag$om
   Cal.fc_right=ag$fc.right
   Cal.cc_right=ag$cc.right
@@ -535,6 +539,12 @@ SEB_Viewing_Angles<-function(calibration_file, image_width,image_height,plot.it=
   Cal.im_dim<-c(image_width,image_height)
   #Cal.R<-genR(Cal.om,space="SO3")
   Cal.R=rodrigues(Cal.om)
+  }
+  
+if(grepl("*.npz",calibration_file)==TRUE){
+Cal.R<-npz_file(calibration_file)
+}
+  
   # view cone
   
   IP_left = matrix(rbind(c(1,-Cal.alpha_c_left,0),c(0, 1, 0),c(0, 0, 1)),ncol=3)%*%
@@ -615,9 +625,27 @@ dm1dm2[4:12,1:3] = Conj(t(rbind(c(0, 0, 0, 0, 0, 1, 0, -1, 0),
         dRdin = dRdm1%*%dm1dm2%*%dm2dm3%*%dm3din;
 
 return(R)
-}
+
 
 #fixed April 6th by Bouguet -- not working in all cases!
 # out = theta * (sqrt((diag(R)+1)/2).*[1;2*(R(1,2:3)>=0)'-1]);
-#theta * (sqrt((diag(R)+1)/2)*as.vector(c(1,2*Conj(t(R[1,2:3]))-1)))        
+#theta * (sqrt((diag(R)+1)/2)*as.vector(c(1,2*Conj(t(R[1,2:3]))-1)))     
+}
+
+
+#' A function to extract the om matrix from an npz calibration
+#'  
+npz_file<-function(calibration_file){
+  require(reticulate)
+  #Here I had to install numpy in the correct version of python: 
+  #in the command prompt "py -3.10 -m pip install numpy"
+
+  np<-import("numpy")
+  mat<-np$load(calibration_file)
+#mat$files
+Cal.R<-matrix(mat$f[["R"]])
+return(Cal.R)
+
+}
+  
     
