@@ -648,4 +648,151 @@ return(Cal.R)
 
 }
   
+
+
+#' A function to concatenate sensor data from a project to attach to image data
+#'
+#' This function inputs a directory folder containing multiple stereo camera deployments,
+#' reads all the sensor data from the deployments contained in the directory. 
+#' It then concatenates these together, assigning #' a unique identifier (deployment_ID) 
+#' and can outputs a .csv files.
+#' @param project.dir directory containing the multiple deployment files 
+#' @param make_csv do you want an output sensor.csv file (default = FALSE)
+#' @keywords stereo camera, SEBASTES, data concatenation
+#' @export
+#' @examples
+#' SEB_get_sensor("C:/Users/rooperc/Desktop/Rockfish Projects/Longline Survey Gear Comparisons/TrigCamData/Gadus")
+
+SEB_get_sensor<-function(project.dir,make_csv=FALSE){
+  require(RSQLite)
+  require(lubridate)
+  require(tidyr)
+  require(stringr)
+  #project.dir<-"D:/DropCam"
+  `%nin%` = Negate(`%in%`)
+  deployments<-list.dirs(project.dir,recursive=TRUE,full.names=TRUE)
+  deployments<-subset(deployments,str_detect(deployments,"logs")==TRUE)
+
+  sensor_data<-NULL
+  for(i in 1:length(deployments)){
+    
+    acc_files<-paste0(deployments[i],"/","CamTrawlMetadata.db3")
+
+    acc.datac<-dbConnect(RSQLite::SQLite(),dbname=acc_files)
+    acc.data<-dbReadTable(acc.datac,"sensor_data")
+    image.data<-dbReadTable(acc.datac,"images")
+    dbDisconnect(acc.datac)
+    
+    acc.datad<-dbConnect(RSQLite::SQLite(),dbname=acc_files)
+    acc.dataad<-dbReadTable(acc.datad,"async_data")
+    dbDisconnect(acc.datad)
+    
+    depth<-acc.data$data[acc.data$sensor_id=="CTControl"]
+    depth<-gsub("\\$OHPR,","",depth)
+    
+    depth<-matrix(unlist(strsplit(depth, ",")),ncol=8,byrow=TRUE)[,1:8]
+    depth<-apply(depth, 2, as.numeric)
+    depth<-data.frame(acc.data$number[acc.data$sensor_id=="CTControl"],depth)
+    colnames(depth)<-c("FRAME_NUMBER","HEADING","PITCH","ROLL","TEMPERATURE","DEPTH","ACCEL_X","ACCEL_Y","ACCEL_Z")
+    
+    image.data<-unique(data.frame(FRAME_NUMBER=image.data$number,time=image.data$time))
+    
+    if("GPS"%in%unique(acc.data$sensor_id)){
+      gps<-matrix(unlist(sapply(strsplit(acc.data$data[acc.data$sensor_id=="GPS"], ","),'[',c(3,5))),ncol=2,byrow=TRUE)
+      gps<-apply(gps, 2, as.numeric)
+      gps<-gps/100
+      gps<-data.frame(acc.data$number[acc.data$sensor_id=="GPS"],gps)
+      colnames(gps)<-c("FRAME_NUMBER","LATITUDE","LONGITUDE")
+      depth<-merge(depth,gps,by="FRAME_NUMBER",all.x=TRUE) 
+    }
+    
+    
+    
+    if("GPS"%nin%unique(acc.data$sensor_id)&"GPS"%in%unique(acc.dataad$sensor_id)){
+      datetime1<-data.frame(FRAME_TIME=as.POSIXct(acc.data$time),FRAME_NUMBER=acc.data$number)
+      datetime1$FRAME_TIME<-round_date(datetime1$FRAME_TIME,unit="second")
+      gps<-matrix(unlist(sapply(strsplit(acc.dataad$data[acc.dataad$sensor_id=="GPS"], ","),'[',c(3,5))),ncol=2,byrow=TRUE)
+      gps<-apply(gps, 2, as.numeric)
+      gps<-gps/100
+      gps<-data.frame(acc.dataad$time[acc.dataad$sensor_id=="GPS"],gps)
+      colnames(gps)<-c("FRAME_TIME","LATITUDE","LONGITUDE")
+      gps$FRAME_TIME<-round_date(as.POSIXct(gps$FRAME_TIME),unit="second")
+      gps<-merge(gps,datetime1,by="FRAME_TIME")
+      gps<-gps[!duplicated(gps$FRAME_TIME),]
+      gps<-gps[,-1]
+      depth<-merge(depth,gps,by="FRAME_NUMBER",all.x=TRUE) 
+    }
+    
+    if("GPS"%nin%unique(acc.data$sensor_id)&"GPS"%nin%unique(acc.dataad$sensor_id)){
+      depth$LATITUDE<-NA
+      depth$LONGITUDE<-NA}
+    
+    depth<-merge(image.data,depth,by="FRAME_NUMBER",all.x=TRUE)
+    #depth$IMAGE_NUMBER<-depth$FRAME_NUMBER
+    #depth$FRAME_NUMBER<-seq(1,length(depth$FRAME_NUMBER),1)
+    
+    colnames(depth)[colnames(depth)=="time"]<-"FRAME_TIME"
+    name1<-unlist(strsplit(acc_files,"/"))
+    name1<-subset(name1,str_detect(name1,"-T")==TRUE)
+    depth$DEPLOYMENT_ID<-name1   
+    sensor_data<-rbind(sensor_data,depth)}
+  
+  if(make_csv==TRUE){write.csv(target.data,file=paste(project.dir,"/targetout_data.csv",sep=""),row.names=FALSE)}
+
+  return(sensor_data)}
+
+
+
+#' A function to concatenate a SEBASTES project database to .csv files
+#'
+#' This function inputs a directory folder containing a single project database from 
+#' stereo camera deployments. It reads the single *.db file with the combined deployment 
+#' data and extracts the frame data and the target data. It then merges with the 
+#' sensor data (if path is provided), from CamTrawlMetadata.db assigning a unique identifier 
+#' (deployment_ID) and outputs two .csv files, one containing target data and one containing the frame data. Any accessory 
+#' data from sensors will also be included with the frame data.
+#' @param project.db database with the combined deployment data
+#' @param deployment.dir directory that contains subdirectories with the individual deployments with sensor data (CamTrawlMetadata.db files)
+#' @keywords stereo camera, SEBASTES, data concatenation
+#' @export
+#' @examples
+#' SEB_project_concatenate("C:/Users/rooperc/Desktop/Deep Sea Coral Research/DeepSeaCoralSurveyDataBase/GOA MACE Data/MACE_2019/MACE2019_GOA.db","D:/DropCam")
+
+SEB_project_concatenate<-function(project.db,deployment.dir){
+  require(RSQLite)
+  require(lubridate)
+  require(tidyr)
+  #project.db<-"C:/Users/rooperc/Desktop/Deep Sea Coral Research/DeepSeaCoralSurveyDataBase/GOA MACE Data/MACE_2019/MACE2019_GOA.db"
+  #deployment.dir<-"D:/DropCam"
+  `%nin%` = Negate(`%in%`)
+
+  target.data<-NULL
+  frame.data<-NULL
+  
+    drop.datac<-dbConnect(RSQLite::SQLite(),dbname=project.db)
+    frame.datat<-dbReadTable(drop.datac, "FRAMES")
+    substrate.data<-dbReadTable(drop.datac,"FRAME_METADATA")
+    substrate.data<-subset(substrate.data,substrate.data$METADATA_VALUE=="Checked"&substrate.data$METADATA_GROUP=="Habitat")
+    substrate.data<-pivot_wider(substrate.data,names_from = METADATA_TYPE,values_from=METADATA_TAG)
+    substrate.data<-data.frame(DEPLOYMENT_ID=substrate.data$DEPLOYMENT_ID,FRAME_NUMBER=substrate.data$FRAME_NUMBER,Primary_habitat=substrate.data$`Primary Habitat`,Secondary_habitat=substrate.data$`Secondary Habitat`)
+    frame.datat<-merge(frame.datat,substrate.data,by=c("DEPLOYMENT_ID","FRAME_NUMBER"),all.x=TRUE)
+    frame.datat<-frame.datat[,-4]
+    target.datat<-dbReadTable(drop.datac, "TARGETS")
+    dbDisconnect(drop.datac)
+    
+    depth<-SEB_get_sensor(deployment.dir)
+    
+    frame.datat<-merge(frame.datat,depth,by=c("DEPLOYMENT_ID","FRAME_NUMBER"),all.x=TRUE) 
+    
+    frame.data<-frame.datat
+    target.data<-target.datat
+  
+  write.csv(target.data,"targetout_data.csv",row.names=FALSE)
+  write.csv(frame.data,"frameout_data.csv",row.names=FALSE)
+  return(list(target.data=target.data,frame.data=frame.data))}
+
+
+
+
+
     
