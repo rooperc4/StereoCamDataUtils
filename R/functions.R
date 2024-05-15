@@ -737,7 +737,7 @@ SEB_get_sensor<-function(project.dir,make_csv=FALSE){
     depth$DEPLOYMENT_ID<-name1   
     sensor_data<-rbind(sensor_data,depth)}
   
-  if(make_csv==TRUE){write.csv(target.data,file=paste(project.dir,"/targetout_data.csv",sep=""),row.names=FALSE)}
+  if(make_csv==TRUE){write.csv(depth,file="sensor_data.csv",row.names=FALSE)}
 
   return(sensor_data)}
 
