@@ -122,9 +122,9 @@ SEB_data_concatenate<-function(project.dir){
 #' @keywords stereo camera, SEBASTES, data concatenation
 #' @export
 #' @examples
-#' SEB_project_concatenate("C:/Users/rooperc/Desktop/Rockfish Projects/Longline Survey Gear Comparisons/TrigCamData/Gadus")
+#' SEB_data_concatenate_project("C:/Users/rooperc/Desktop/Rockfish Projects/Longline Survey Gear Comparisons/TrigCamData/Gadus")
 
-SEB_project_concatenate<-function(project.dir){
+SEB_data_concatenate_project<-function(project.dir){
   require(RSQLite)
   require(lubridate)
   require(tidyr)
