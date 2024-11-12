@@ -2,16 +2,27 @@
 % Please edit documentation in R/functions.R
 \name{SEB_project_concatenate}
 \alias{SEB_project_concatenate}
-\title{A function to concatenate a SEBASTES project database to .csv files}
+\title{A function to concatenate SEBASTES data to .csv files}
 \usage{
+SEB_project_concatenate(project.db, deployment.dir)
+
 SEB_project_concatenate(project.db, deployment.dir)
 }
 \arguments{
 \item{project.db}{database with the combined deployment data}
 
 \item{deployment.dir}{directory that contains subdirectories with the individual deployments with sensor data (CamTrawlMetadata.db files)}
+
+\item{project.dir}{directory containing the multiple deployment files}
 }
 \description{
+This function inputs a directory folder containing multiple stereo camera deployments,
+reads all the *.db files and extracts the frame data and the target data from all the
+deployments contained in the directory. It then concatenates these together, assigning
+a unique identifier (deployment_ID) and outputs two .csv files, one containing target
+data and one containing the frame data. Any accessory data from sensors will also be
+included with the frame data. This function works with the new "project" style data.
+
 This function inputs a directory folder containing a single project database from
 stereo camera deployments. It reads the single *.db file with the combined deployment
 data and extracts the frame data and the target data. It then merges with the
@@ -20,6 +31,7 @@ sensor data (if path is provided), from CamTrawlMetadata.db assigning a unique i
 data from sensors will also be included with the frame data.
 }
 \examples{
+SEB_project_concatenate("C:/Users/rooperc/Desktop/Rockfish Projects/Longline Survey Gear Comparisons/TrigCamData/Gadus")
 SEB_project_concatenate("C:/Users/rooperc/Desktop/Deep Sea Coral Research/DeepSeaCoralSurveyDataBase/GOA MACE Data/MACE_2019/MACE2019_GOA.db","D:/DropCam")
 }
 \keyword{SEBASTES,}
