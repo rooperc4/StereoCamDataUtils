@@ -16,7 +16,7 @@ SEB_data_concatenate<-function(project.dir){
   require(RSQLite)
   require(lubridate)
   require(tidyr)
-  #project.dir<-"D:/SeamountTransectData"
+  #project.dir<-"C:/Users/rooperc/Desktop/SeamountSebastes"
   `%nin%` = Negate(`%in%`)
   deployments<-list.dirs(project.dir,recursive=FALSE,full.names=TRUE)
   target.data<-NULL
@@ -69,8 +69,14 @@ SEB_data_concatenate<-function(project.dir){
 
   if("GPS"%in%unique(acc.data$sensor_id)){
   gps<-matrix(unlist(sapply(strsplit(acc.data$data[acc.data$sensor_id=="GPS"], ","),'[',c(3,5))),ncol=2,byrow=TRUE)
-  gps<-apply(gps, 2, as.numeric)
+  gps<-apply(gps, 2, as.numeric) 
   gps<-gps/100
+  gps1<-do.call(rbind, strsplit(as.character(gps[,1]),"\\."))
+  gps1<-as.numeric(gps1[,1])+as.numeric(gps1[,2])/600000
+  gps2<-do.call(rbind, strsplit(as.character(gps[,2]),"\\."))
+  gps2<-as.numeric(gps2[,1])+as.numeric(gps2[,2])/600000
+  gps<-cbind(gps1,gps2)
+ 
   gps<-data.frame(acc.data$number[acc.data$sensor_id=="GPS"],gps)
   colnames(gps)<-c("FRAME_NUMBER","LATITUDE","LONGITUDE")
   depth<-merge(depth,gps,by="FRAME_NUMBER",all.x=TRUE) 
