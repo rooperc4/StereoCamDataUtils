@@ -92,6 +92,15 @@ SEB_data_concatenate<-function(project.dir){
   gps<-matrix(unlist(sapply(strsplit(acc.dataad$data[acc.dataad$sensor_id=="GPS"], ","),'[',c(3,5))),ncol=2,byrow=TRUE)
   gps<-apply(gps, 2, as.numeric)
   gps<-gps/100
+  gps1<-do.call(rbind, strsplit(as.character(gps[,1]),"\\."))
+  gps1[,2]<-sub(sprintf('(.{%d})', 2), '\\1.', gps1[,2])
+  gps1<-as.numeric(gps1[,1])+as.numeric(gps1[,2])/60
+  gps2<-do.call(rbind, strsplit(as.character(gps[,2]),"\\."))
+  gps2[,2]<-sub(sprintf('(.{%d})', 2), '\\1.', gps2[,2])
+  gps2<-as.numeric(gps2[,1])+as.numeric(gps2[,2])/60
+  gps<-cbind(gps1,gps2)
+  
+  
   gps<-data.frame(acc.dataad$time[acc.dataad$sensor_id=="GPS"],gps)
   colnames(gps)<-c("FRAME_TIME","LATITUDE","LONGITUDE")
   gps$FRAME_TIME<-round_date(as.POSIXct(gps$FRAME_TIME),unit="second")
