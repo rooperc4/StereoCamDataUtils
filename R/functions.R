@@ -35,17 +35,19 @@ SEB_data_concatenate<-function(project.dir){
   
   drop.datac<-dbConnect(RSQLite::SQLite(),dbname=data_files)
   frame.datat<-dbReadTable(drop.datac, "FRAMES")
-  if(colnames(frame.datat)[1]=="PROJECT"){frame.datat<-frame.datat[,-c(1,5:6,8:9)]}
+  frame.datat<-data.frame(DEPLOYMENT_ID=frame.datat$DEPLOYMENT_ID,FRAME_NUMBER=frame.datat$FRAME_NUMBER,FRAME_TIME=frame.datat$FRAME_TIME,COMMENT=frame.datat$COMMENT)
   substrate.data<-dbReadTable(drop.datac,"FRAME_METADATA")
   substrate.data<-subset(substrate.data,substrate.data$METADATA_VALUE!=""&substrate.data$METADATA_VALUE!="NULL")
-  if(colnames(substrate.data)[1]=="PROJECT"){substrate.data<-substrate.data[,2:7]}
+  substrate.data<-data.frame(DEPLOYMENT_ID=substrate.data$DEPLOYMENT_ID,FRAME_NUMBER=substrate.data$FRAME_NUMBER,METADATA_GROUP=substrate.data$METADATA_GROUP,
+                             METADATA_TAG=substrate.data$METADATA_TAG,METADATA_TYPE=substrate.data$METADATA_TYPE,METADATA_VALUE=substrate.data$METADATA_VALUE)
   substrate.data<-pivot_wider(substrate.data,names_from = METADATA_TYPE,values_from=METADATA_TAG)
   substrate.data<-data.frame(FRAME_NUMBER=substrate.data$FRAME_NUMBER,Primary_habitat=substrate.data$`Primary Habitat`,Secondary_habitat=substrate.data$`Secondary Habitat`)
   frame.datat<-merge(frame.datat,substrate.data,by="FRAME_NUMBER",all.x=TRUE)
   frame.datat<-frame.datat[,-3]
   name1<-unique(frame.datat$DEPLOYMENT_ID)
   target.datat<-dbReadTable(drop.datac, "TARGETS")
-  if(colnames(target.datat)[1]=="PROJECT"){target.datat<-target.datat[,2:28]}
+  badcols<-c("ANNOTATOR","TIME_STAMP","PROJECT")
+  target.datat<-target.datat[,-which(names(target.datat)%in%badcols)]
   dbDisconnect(drop.datac)
   
   acc.datac<-dbConnect(RSQLite::SQLite(),dbname=acc_files)
