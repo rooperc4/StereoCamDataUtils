@@ -719,6 +719,7 @@ SEB_get_sensor<-function(project.dir,make_csv=FALSE){
     
     if("GPS"%in%unique(acc.data$sensor_id)){
       gps<-matrix(unlist(sapply(strsplit(acc.data$data[acc.data$sensor_id=="GPS"], ","),'[',c(3,5))),ncol=2,byrow=TRUE)
+      if(gps[1,2]=="N"){gps<-matrix(unlist(sapply(strsplit(acc.data$data[acc.data$sensor_id=="GPS"], ","),'[',c(4,6))),ncol=2,byrow=TRUE)}
       gps<-apply(gps, 2, as.numeric)
       gps<-gps/100
       gps<-data.frame(acc.data$number[acc.data$sensor_id=="GPS"],gps)
